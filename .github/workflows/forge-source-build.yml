@@ -26,6 +26,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Set up Gradle 8.10.2
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
       - name: Restore pinned source repositories
         shell: pwsh
         run: ./tools/Restore-Sources.ps1
@@ -33,8 +38,7 @@ jobs:
       - name: Build AtumVR API and core
         shell: pwsh
         run: |
-          $gradle = "$PWD/sources/AtumVR-upgrade/gradlew.bat"
-          & $gradle -p sources/AtumVR-upgrade :atumvr-api:jar :atumvr-core:jar --no-daemon --console=plain
+          gradle -p sources/AtumVR-upgrade :atumvr-api:jar :atumvr-core:jar --no-daemon --console=plain
           if ($LASTEXITCODE -ne 0) { throw "AtumVR build failed" }
 
       - name: Copy AtumVR libraries
@@ -42,6 +46,8 @@ jobs:
         run: |
           $api = "sources/AtumVR-upgrade/atumvr-api/build/libs/atumvr-api-1.14.0beta-snapshot#14.jar"
           $core = "sources/AtumVR-upgrade/atumvr-core/build/libs/atumvr-core-1.14.0beta-snapshot#14.jar"
+          if (!(Test-Path $api)) { throw "Missing AtumVR API output: $api" }
+          if (!(Test-Path $core)) { throw "Missing AtumVR core output: $core" }
           foreach ($version in @("Visor-0.5.0", "Visor-0.6.0")) {
             $libs = "sources/$version/libs"
             New-Item -ItemType Directory -Force $libs | Out-Null
@@ -52,8 +58,7 @@ jobs:
       - name: Build Visor 0.5.0 Forge and Fabric
         shell: pwsh
         run: |
-          $gradle = "$PWD/sources/Visor-0.5.0/gradlew.bat"
-          & $gradle -p sources/Visor-0.5.0 :visor-fabric:build :visor-forge:build --no-daemon --console=plain
+          gradle -p sources/Visor-0.5.0 :visor-fabric:build :visor-forge:build --no-daemon --console=plain
           if ($LASTEXITCODE -ne 0) { throw "Visor build failed" }
 
       - name: Upload compiled Visor dependencies
