@@ -59,6 +59,16 @@ jobs:
         run: |
           gradle -p sources/Visor-0.5.0 :visor-fabric:build :visor-forge:build --no-daemon --console=plain
           if ($LASTEXITCODE -ne 0) { throw "Visor build failed" }
+          
+      - name: Set up Java 21 for Visor 0.6
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Build Visor 0.6.0 Android Forge
+        shell: pwsh
+        run: ./tools/Build-VisorAndroid06.ps1 -JavaHome "$env:JAVA_HOME_21_X64"
       
       - name: Prepare Forge 1.20.1 runtime
         shell: pwsh
