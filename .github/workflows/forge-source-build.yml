@@ -132,3 +132,82 @@ jobs:
             outputs/Visor-Android-Bridge-0.1.1.jar
             prepared/forge/1.20.1-47.4.20/profile.json
             prepared/forge/1.20.1-47.4.20/libraries/**
+  package-quest:
+    name: Package Quest APK
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+
+    steps:
+      - name: Check out experimental branch
+        uses: actions/checkout@v4
+        with:
+          ref: github-actions-quest-forge-build
+          lfs: true
+
+      - name: Download dependency artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: quest-forge-visor-dependencies
+          path: _deps
+
+      - name: Restore Unity and source repositories
+        shell: pwsh
+        run: |
+          ./tools/Restore-Sources.ps1
+          ./tools/Recover-UnityAssets.ps1
+
+      - name: Restore compiled dependencies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $copies = @(
+            @("_deps/sources/Pojlib/build/outputs/aar/Pojlib-release.aar", "sources/Pojlib/build/outputs/aar/Pojlib-release.aar"),
+            @("_deps/sources/AtumVR-upgrade/atumvr-api/build/libs/atumvr-api-1.14.0beta-snapshot#14.jar", "sources/AtumVR-upgrade/atumvr-api/build/libs/atumvr-api-1.14.0beta-snapshot#14.jar"),
+            @("_deps/sources/AtumVR-upgrade/atumvr-core/build/libs/atumvr-core-1.14.0beta-snapshot#14.jar", "sources/AtumVR-upgrade/atumvr-core/build/libs/atumvr-core-1.14.0beta-snapshot#14.jar"),
+            @("_deps/sources/Visor-0.5.0/visor-forge/build/libs", "sources/Visor-0.5.0/visor-forge/build/libs"),
+            @("_deps/sources/Visor-0.5.0/visor-fabric/build/libs", "sources/Visor-0.5.0/visor-fabric/build/libs"),
+            @("_deps/outputs/Visor-Android-Bridge-0.1.1.jar", "outputs/Visor-Android-Bridge-0.1.1.jar"),
+            @("_deps/prepared/forge/1.20.1-47.4.20", "prepared/forge/1.20.1-47.4.20")
+          )
+
+          foreach ($copy in $copies) {
+            if (!(Test-Path $copy[0])) { throw "Missing dependency: $($copy[0])" }
+            $parent = Split-Path $copy[1] -Parent
+            New-Item -ItemType Directory -Force $parent | Out-Null
+            Copy-Item $copy[0] $copy[1] -Recurse -Force
+          }
+
+      - name: Stage Android assets
+        shell: pwsh
+        run: ./tools/Stage-PicoAssets.ps1
+
+      - name: Add Pojlib to Unity project
+        shell: pwsh
+        run: |
+          $destination = "sources/QCXR-XR-Wrapper/Assets/Plugins/Android"
+          New-Item -ItemType Directory -Force $destination | Out-Null
+          Copy-Item "sources/Pojlib/build/outputs/aar/Pojlib-release.aar" "$destination/Pojlib-release.aar" -Force
+
+      - name: Build Quest APK with Unity
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: sources/QCXR-XR-Wrapper
+          unityVersion: 6000.4.10f1
+          targetPlatform: Android
+          buildMethod: QuestCraftAndroidBuild.BuildQuest
+          androidExportType: androidPackage
+
+      - name: Upload Quest APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: QuestCraft-Forge-Quest-alpha.13
+          path: |
+            outputs/*.apk
+            outputs/*.json
+          if-no-files-found: error
