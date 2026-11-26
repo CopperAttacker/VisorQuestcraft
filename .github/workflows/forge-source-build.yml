@@ -59,6 +59,24 @@ jobs:
         run: |
           gradle -p sources/Visor-0.5.0 :visor-fabric:build :visor-forge:build --no-daemon --console=plain
           if ($LASTEXITCODE -ne 0) { throw "Visor build failed" }
+      
+      - name: Prepare Forge 1.20.1 runtime
+        shell: pwsh
+        run: ./tools/Prepare-Forge.ps1 -JavaHome "$env:JAVA_HOME"
+
+      - name: Cache Forge annotation for bridge build
+        shell: pwsh
+        run: |
+          $runtime = "prepared/forge/1.20.1-47.4.20/libraries"
+          $jar = Get-ChildItem $runtime -Recurse -Filter "javafmllanguage-*.jar" | Select-Object -First 1
+          if (!$jar) { throw "Forge javafmllanguage library not found" }
+          $cache = "$env:USERPROFILE/.gradle/caches/modules-2/files-2.1/net.minecraftforge/javafmllanguage/1.20.1-47.4.0/ci"
+          New-Item -ItemType Directory -Force $cache | Out-Null
+          Copy-Item $jar.FullName $cache
+
+      - name: Build Android bridge
+        shell: pwsh
+        run: ./tools/Build-AndroidBridge.ps1 -JavaHome "$env:JAVA_HOME"
 
       - name: Upload compiled Visor dependencies
         uses: actions/upload-artifact@v4
@@ -70,3 +88,6 @@ jobs:
             sources/AtumVR-upgrade/atumvr-core/build/libs/*.jar
             sources/Visor-0.5.0/visor-forge/build/libs/*.jar
             sources/Visor-0.5.0/visor-fabric/build/libs/*.jar
+            outputs/Visor-Android-Bridge-0.1.1.jar
+            prepared/forge/1.20.1-47.4.20/profile.json
+            prepared/forge/1.20.1-47.4.20/libraries/**
