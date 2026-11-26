@@ -204,6 +204,7 @@ jobs:
           targetPlatform: Android
           buildMethod: QuestCraftAndroidBuild.BuildQuest
           androidExportType: androidPackage
+          allowDirtyBuild: true
 
       - name: Upload Quest APK
         uses: actions/upload-artifact@v4
