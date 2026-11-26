@@ -95,7 +95,23 @@ jobs:
       - name: Build Android bridge
         shell: pwsh
         run: ./tools/Build-AndroidBridge.ps1 -JavaHome "$env:JAVA_HOME"
+        
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platforms;android-34 build-tools;30.0.3 ndk;26.1.10909125'
 
+      - name: Stage Android assets
+        shell: pwsh
+        run: ./tools/Stage-PicoAssets.ps1
+
+      - name: Build Pojlib Android library
+        shell: pwsh
+        working-directory: sources/Pojlib
+        run: |
+          .\gradlew.bat assembleRelease --no-daemon --console=plain
+          if ($LASTEXITCODE -ne 0) { throw "Pojlib build failed" }
+          
       - name: Upload compiled Visor dependencies
         uses: actions/upload-artifact@v4
         with:
