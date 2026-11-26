@@ -24,6 +24,7 @@ try {
     } finally { Pop-Location }
     $jar = Join-Path $source 'build/libs/Visor-0.6.0-alpha.2+mc1.20.1-forge.jar'
     $output = Join-Path $root 'outputs/Visor-0.6.0-alpha.2-android.1+mc1.20.1-forge.jar'
+        New-Item -ItemType Directory -Force (Split-Path -Parent $output) | Out-Null
     Copy-Item -LiteralPath $jar -Destination $output
     & (Join-Path $PSScriptRoot 'Verify-VisorAndroid06.ps1') -Jar $output
 } finally { $env:JAVA_HOME = $previousJava }
