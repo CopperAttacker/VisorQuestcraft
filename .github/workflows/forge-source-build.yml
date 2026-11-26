@@ -124,6 +124,7 @@ jobs:
           name: quest-forge-visor-dependencies
           if-no-files-found: error
           path: |
+            sources/Pojlib/build/outputs/aar/Pojlib-release.aar
             sources/AtumVR-upgrade/atumvr-api/build/libs/*.jar
             sources/AtumVR-upgrade/atumvr-core/build/libs/*.jar
             sources/Visor-0.5.0/visor-forge/build/libs/*.jar
