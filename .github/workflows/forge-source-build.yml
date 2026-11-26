@@ -1,0 +1,72 @@
+name: Forge Android source build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Visor dependencies
+    runs-on: windows-latest
+    timeout-minutes: 240
+
+    steps:
+      - name: Check out experimental branch
+        uses: actions/checkout@v4
+        with:
+          ref: github-actions-quest-forge-build
+          lfs: true
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 8.10.2
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Restore pinned source repositories
+        shell: pwsh
+        run: ./tools/Restore-Sources.ps1
+
+      - name: Build AtumVR API and core
+        shell: pwsh
+        run: |
+          gradle -p sources/AtumVR-upgrade :atumvr-api:jar :atumvr-core:jar --no-daemon --console=plain
+          if ($LASTEXITCODE -ne 0) { throw "AtumVR build failed" }
+
+      - name: Copy AtumVR libraries
+        shell: pwsh
+        run: |
+          $api = "sources/AtumVR-upgrade/atumvr-api/build/libs/atumvr-api-1.14.0beta-snapshot#14.jar"
+          $core = "sources/AtumVR-upgrade/atumvr-core/build/libs/atumvr-core-1.14.0beta-snapshot#14.jar"
+          if (!(Test-Path $api)) { throw "Missing AtumVR API output: $api" }
+          if (!(Test-Path $core)) { throw "Missing AtumVR core output: $core" }
+          foreach ($version in @("Visor-0.5.0", "Visor-0.6.0")) {
+            $libs = "sources/$version/libs"
+            New-Item -ItemType Directory -Force $libs | Out-Null
+            Copy-Item $api "$libs/atumvr-api-pico.jar" -Force
+            Copy-Item $core "$libs/atumvr-core-pico.jar" -Force
+          }
+
+      - name: Build Visor 0.5.0 Forge and Fabric
+        shell: pwsh
+        run: |
+          gradle -p sources/Visor-0.5.0 :visor-fabric:build :visor-forge:build --no-daemon --console=plain
+          if ($LASTEXITCODE -ne 0) { throw "Visor build failed" }
+
+      - name: Upload compiled Visor dependencies
+        uses: actions/upload-artifact@v4
+        with:
+          name: quest-forge-visor-dependencies
+          if-no-files-found: error
+          path: |
+            sources/AtumVR-upgrade/atumvr-api/build/libs/*.jar
+            sources/AtumVR-upgrade/atumvr-core/build/libs/*.jar
+            sources/Visor-0.5.0/visor-forge/build/libs/*.jar
+            sources/Visor-0.5.0/visor-fabric/build/libs/*.jar
