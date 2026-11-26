@@ -124,6 +124,7 @@ jobs:
           name: quest-forge-visor-dependencies
           if-no-files-found: error
           path: |
+            outputs/Visor-0.6.0-alpha.2-android.1+mc1.20.1-forge.jar
             sources/Pojlib/build/outputs/aar/Pojlib-release.aar
             sources/AtumVR-upgrade/atumvr-api/build/libs/*.jar
             sources/AtumVR-upgrade/atumvr-core/build/libs/*.jar
@@ -169,6 +170,7 @@ jobs:
             @("_deps/sources/Visor-0.5.0/visor-forge/build/libs", "sources/Visor-0.5.0/visor-forge/build/libs"),
             @("_deps/sources/Visor-0.5.0/visor-fabric/build/libs", "sources/Visor-0.5.0/visor-fabric/build/libs"),
             @("_deps/outputs/Visor-Android-Bridge-0.1.1.jar", "outputs/Visor-Android-Bridge-0.1.1.jar"),
+            @("_deps/outputs/Visor-0.6.0-alpha.2-android.1+mc1.20.1-forge.jar", "outputs/Visor-0.6.0-alpha.2-android.1+mc1.20.1-forge.jar"),
             @("_deps/prepared/forge/1.20.1-47.4.20", "prepared/forge/1.20.1-47.4.20")
           )
 
