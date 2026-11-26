@@ -74,6 +74,10 @@ jobs:
           New-Item -ItemType Directory -Force $cache | Out-Null
           Copy-Item $jar.FullName $cache
 
+      - name: Create outputs directory
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force outputs | Out-Null
+        
       - name: Build Android bridge
         shell: pwsh
         run: ./tools/Build-AndroidBridge.ps1 -JavaHome "$env:JAVA_HOME"
