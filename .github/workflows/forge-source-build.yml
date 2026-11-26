@@ -34,6 +34,10 @@ jobs:
         shell: pwsh
         run: ./tools/Restore-Sources.ps1
 
+      - name: Recover Unity project assets
+        shell: pwsh
+        run: ./tools/Recover-UnityAssets.ps1
+
       - name: Build AtumVR API and core
         shell: pwsh
         run: |
